@@ -87,12 +87,11 @@ class MoneroDaemonRpc:
 
 #TODO look into this more
     def set_bans(self, list_ips, time):
-        #params = {"bans":[{"ip":838969536,"ban":true,"seconds":30}]}}
-        #TODO add list to input parameters and create ban object/class
-        data = r'{"jsonrpc":"2.0","id":"0","method":"set_bans","params":{"bans":[{"ip":838969536,"ban":true,"seconds":30}]}}'
-        response = requests.post(self.rpc_url, headers=self.headers, data=data)
-        print(response.headers)
-        return json.dumps(response.json(), indent=5)
+        dict_ips = {}
+        for ip in list_ips:
+            dict_ips.update({"ip": ip, "ban": "true", "seconds": time})
+        params = {"bans": dict_ips}
+        return self.post_to_monerod_rpc("set_bans", params)
 
     def get_bans(self):
         return self.post_to_monerod_rpc("get_bans")
