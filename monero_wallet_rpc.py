@@ -14,36 +14,57 @@ class MoneroWalletRpc:
         self.update = {"jsonrpc": "2.0", "id": "0"}
         self.rpc_input = None
 
-    def get_balance(self):
-        response = self.simple_method("getbalance")
-        return response
-
-    def get_address(self):
-        response = self.simple_method("getaddress")
-        return response
-
-    def get_height(self):
-        response = self.simple_method("getheight")
-        return response
-
-    def sweep_dust(self):
-        response = self.simple_method("sweep_dust")
-        return response
-
-    def get_payments(self, payment_id):
-        data = '{"jsonrpc":"2.0","id":"0","method":"get_payments","params":{"payment_id":"'+payment_id+'"}}'
-        response = requests.post(self.rpc_url, headers=self.headers,
-                                 data=data,
-                                 auth=HTTPDigestAuth(self.user, self.password))
+    def post_to_monero_wallet_rpc(self, method: str, params=None):
+        # define standard json header
+        if params is not None:
+            rpc_input = json.dumps({"jsonrpc": "2.0", "id": "0",
+                                    "method": method, "params": params})
+        else:
+            rpc_input = json.dumps({"jsonrpc": "2.0", "id": "0",
+                                    "method": method})
+        response = requests.post(
+            self.rpc_url,
+            data=rpc_input,
+            headers=self.headers,
+            auth=HTTPDigestAuth(self.user, self.password)
+        )
         return json.dumps(response.json(), indent=5)
 
-    def export_key_images(self):
-        response = self.simple_method("export_key_images")
-        return response
+    def get_balance(self):
+        return self.post_to_monero_wallet_rpc("getbalance")
 
+    def get_address(self):
+        return self.post_to_monero_wallet_rpc("getaddress")
+
+    def get_height(self):
+        return self.post_to_monero_wallet_rpc("getheight")
+
+    def sweep_dust(self):
+        return self.post_to_monero_wallet_rpc("sweep_dust")
+
+    def get_payments(self, payment_id):
+        params = {"wallet_address": payment_id}
+        return self.post_to_monero_wallet_rpc("payment_id", params)
+
+    def export_key_images(self):
+        return self.post_to_monero_wallet_rpc("export_key_images")
+
+    def import_key_images(self, keys):
+        dict_key = {}
+        list_keysig = []
+        for key_image, sig in keys:
+            dict_key.update({"key_image": key_image,"signature": sig})
+            list_keysig.append(dict_key)
+            dict_key.clear()
+        params = {"signed_key_images":list_keysig}
+        return self.post_to_monero_wallet_rpc("import_key_images", params)
+        
+
+
+        params = {"signed_key_images": [{}]}
     def rescan_spent(self):
-        response = self.simple_method("rescan_spent")
-        return response
+        return self.post_to_monero_wallet_rpc("rescan_spent")
+
 
     def start_mining(self,thread_count:int, background_mining:bool, ignore_battery:bool):
         #TODO replace params
@@ -56,88 +77,58 @@ class MoneroWalletRpc:
         return json.dumps(response.json(), indent=5)
 
     def stop_mining(self):
-        response = self.simple_method("stop_mining")
-        return response
+        return self.post_to_monero_wallet_rpc("stop_mining")
 
     def stop_wallet(self):
-        response = self.simple_method("stop_wallet")
-        return json.dumps(response.json(), indent=5)
+        return self.post_to_monero_wallet_rpc("stop_wallet")
 
     def get_languages(self):
-        response = self.simple_method("get_languages")
-        return response
+        return self.post_to_monero_wallet_rpc("get_languages")
+
 
     #TODO You need to have set the argument "–wallet-dir" when
     def create_wallet(self, wallet_name=str, password=str):
-        rpc_input = {
-            "params": {"filename": wallet_name,
-                       "password": password}
-        }
-        response = self.simple_method("create_wallet", rpc_input)
-        return response
+        params = {"filename": wallet_name, "password": password}
+        return self.post_to_monero_wallet_rpc("create_wallet", params)
+
 
     # TODO You need to have set the argument "–wallet-dir" when
     def open_wallet(self, wallet_name=str, password=str):
-        rpc_input = {
-            "params": {"filename": wallet_name,
-                       "password": password}
-        }
-        response = self.simple_method("open_wallet", rpc_input)
-        return response
+        params = {"filename": wallet_name, "password": password}
+        return self.post_to_monero_wallet_rpc("open_wallet", params)
 
-    def post_to_monerod_rpc(self, method: str, *params):
-        # define standard json header
-        if params is not None:
-            rpc_input = {"method": method, "params": params}
-        else:
-            rpc_input = {"method": method}
-        # add standard rpc values
-        rpc_input.update({"jsonrpc": "2.0", "id": "0"})
-        # execute the rpc request
-        response = requests.post(
-            self.rpc_url,
-            data=json.dumps(rpc_input),
-            headers=self.headers,
-            auth=HTTPDigestAuth(self.user, self.password)
-        )
-        return json.dumps(response.json(), indent=5)
+    def delete_address_book(self, address_index: int):
+        params = {"index": address_index}
+        return self.post_to_monero_wallet_rpc("delete_address_book", params)
 
-    def simple_method(self, method_name, params=None):
-        url = self.rpc_url
-        headers = self.headers
-        if params is None:
-            self.rpc_input = {
-                "method": method_name
-            }
-        else:
-            self.rpc_input = {
-                "method": method_name
-            }
-            self.rpc_input.update(params)
+    def add_address_book(self, address: str, payment_id: str=None, description:str=None):
+        params = {"address": address}
+        if payment_id is not None:
+            params.update({"payment_id":payment_id})
+        if description is not None:
+            params.update({"description":description})
+        return self.post_to_monero_wallet_rpc("add_address_book", params)
 
-        self.rpc_input.update(self.update)
-        response = requests.post(
-            url,
-            data=json.dumps(self.rpc_input),
-            headers=headers,
-            auth=HTTPDigestAuth(self.user, self.password))
-        return json.dumps(response.json(), indent=5)
+    def sign(self, data: str):
+        params = {"data": data}
+        return self.post_to_monero_wallet_rpc("sign", params)
+
+    def verify(self, data: str, address: str, signature:str):
+        params = {"data": data,"address":address,"signature":signature}
+        return self.post_to_monero_wallet_rpc("verify", params=params)
 
     def transfer(self, transactions, mixin=4,):
         url = self.rpc_url
         # standard json header
         headers = self.headers
-
         recipients = []
         for address, amount in transactions.items():
             int_amount = int(self.get_amount(amount))
             assert amount == float(self.get_money(str(int_amount))), "Amount conversion failed"
             recipients.append({"address": address, "amount": int_amount})
         print(recipients)
-
         # get some random payment_id
         payment_id = self.get_payment_id()
-
         # simplewallet' procedure/method to call
         rpc_input = {
             "method": "transfer",
@@ -145,7 +136,6 @@ class MoneroWalletRpc:
                        "mixin": mixin,
                        "payment_id": payment_id}
         }
-
         # add standard rpc values
         rpc_input.update({"jsonrpc": "2.0", "id": "0"})
 

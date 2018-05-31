@@ -44,10 +44,9 @@ class MoneroDaemonRpc:
 
     def get_block(self, block):
         if type(block) is str:
-            params = {"height": str(block)}
+            params = {"height": block}
         if type(block) is int:
             params = {"height": block}
-            print(type(params))
         return self.post_to_monerod_rpc("getblock", params)
 
     def on_getblockhash(self, block: int):
