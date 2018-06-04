@@ -15,13 +15,13 @@ class MoneroWalletRpc:
         self.rpc_input = None
 
     def post_to_monero_wallet_rpc(self, method: str, params=None):
-        # define standard json header
         if params is not None:
             rpc_input = json.dumps({"jsonrpc": "2.0", "id": "0",
                                     "method": method, "params": params})
         else:
             rpc_input = json.dumps({"jsonrpc": "2.0", "id": "0",
                                     "method": method})
+
         response = requests.post(
             self.rpc_url,
             data=rpc_input,
@@ -49,32 +49,34 @@ class MoneroWalletRpc:
     def export_key_images(self):
         return self.post_to_monero_wallet_rpc("export_key_images")
 
-    def import_key_images(self, keys):
+    def import_key_images(self, keys:dict):
         dict_key = {}
         list_keysig = []
         for key_image, sig in keys:
             dict_key.update({"key_image": key_image,"signature": sig})
             list_keysig.append(dict_key)
             dict_key.clear()
-        params = {"signed_key_images":list_keysig}
+        params = {"signed_key_images": list_keysig}
         return self.post_to_monero_wallet_rpc("import_key_images", params)
-        
 
-
-        params = {"signed_key_images": [{}]}
     def rescan_spent(self):
         return self.post_to_monero_wallet_rpc("rescan_spent")
 
-
     def start_mining(self,thread_count:int, background_mining:bool, ignore_battery:bool):
-        #TODO replace params
-        data = '{"jsonrpc":"2.0","id":"0",' \
-               '"method":"start_mining",' \
-               '"params":{"threads_count":1,' \
-               '"do_background_mining":true,' \
-               '"ignore_battery":true}}'
-        response = requests.post('http://localhost:18082/json_rpc', headers=self.headers, data=data)
-        return json.dumps(response.json(), indent=5)
+
+        if background_mining is True:
+            background_mining_str = "true"
+        else:
+            background_mining_str = "false"
+
+        if ignore_battery is True:
+            ignore_battery_str = "true"
+        else:
+            ignore_battery_str = "false"
+
+        params = {"threads_count": thread_count, "do_background_mining": background_mining_str, "ignore_battery": ignore_battery_str}
+        return self.post_to_monero_wallet_rpc("start_mining", params)
+
 
     def stop_mining(self):
         return self.post_to_monero_wallet_rpc("stop_mining")
@@ -86,13 +88,12 @@ class MoneroWalletRpc:
         return self.post_to_monero_wallet_rpc("get_languages")
 
 
-    #TODO You need to have set the argument "–wallet-dir" when
+    #You need to have set the argument "–wallet-dir" when
     def create_wallet(self, wallet_name=str, password=str):
         params = {"filename": wallet_name, "password": password}
         return self.post_to_monero_wallet_rpc("create_wallet", params)
 
-
-    # TODO You need to have set the argument "–wallet-dir" when
+    #You need to have set the argument "–wallet-dir" when
     def open_wallet(self, wallet_name=str, password=str):
         params = {"filename": wallet_name, "password": password}
         return self.post_to_monero_wallet_rpc("open_wallet", params)
@@ -101,7 +102,7 @@ class MoneroWalletRpc:
         params = {"index": address_index}
         return self.post_to_monero_wallet_rpc("delete_address_book", params)
 
-    def add_address_book(self, address: str, payment_id: str=None, description:str=None):
+    def add_address_book(self, address: str, payment_id: str=None, description: str=None):
         params = {"address": address}
         if payment_id is not None:
             params.update({"payment_id":payment_id})
@@ -114,10 +115,17 @@ class MoneroWalletRpc:
         return self.post_to_monero_wallet_rpc("sign", params)
 
     def verify(self, data: str, address: str, signature:str):
-        params = {"data": data,"address":address,"signature":signature}
+        params = {"data": data, "address": address, "signature": signature}
         return self.post_to_monero_wallet_rpc("verify", params=params)
 
-    def transfer(self, transactions, mixin=4,):
+    def make_uri_payment(self, address:str, amount:int,
+                         payment_id:str, tx_description:str, recipient_name:str ):
+        params = {"address": address, "amount": amount, "payment_id": payment_id,
+                  "tx_description" : tx_description, "recipient_name": recipient_name}
+        return self.post_to_monero_wallet_rpc("make_uri", params)
+
+
+    def transfer(self, transactions, mixin=4):
         url = self.rpc_url
         # standard json header
         headers = self.headers
@@ -195,18 +203,3 @@ class MoneroWalletRpc:
         random_32_bytes = os.urandom(32)
         payment_id = "".join(map(chr, binascii.hexlify(random_32_bytes)))
         return payment_id
-
-
-    def make_uri_payment(self, address:str, amount:int,
-                         payment_id:str, tx_description:str, recipient_name:str ):
-        data = '{"jsonrpc":"2.0","id":"0","method":"make_uri",' \
-               '"params":{"address":"44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A",' \
-               '"amount":10,"payment_id":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",' \
-               '"tx_description":"Testing out the make_uri function.",' \
-               '"recipient_name":"Monero Project donation address"}}'
-        response = requests.post(
-            self.rpc_url,
-            data=data,
-            headers=self.headers,
-            auth=HTTPDigestAuth(self.user, self.password))
-        return json.dumps(response.json(), indent=5)

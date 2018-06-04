@@ -22,11 +22,21 @@ I may turn this into a pipable library, but for now just download or clone.
 
 ### Example of using code... 
 
-
 ```python
 from monerojdaemon import MoneroDaemonRpc
 
 rpc = MoneroDaemonRpc("http://127.0.0.1:18081/json_rpc", user='username', password='password')
 rpc.get_block(89138)
 ```
+
+### Support
+
+XMR address: 89FheVhwYVzWCVjgfTYKrFSYs9V7bASszTHn3JyVsdgsXr9cVgHQGhK9Haynypqt6vAXFzRKZo4yLffLJeed42ChCpMrovt
+ZEC address: t1STUKUuzpqFh55JiERXJtFLHPdCk43PWmP
+ETH address: 0xb2d8bef2b364e3f421db24c145fcfc3705eb78c1
+LTC address: LepgPD7PN1deUQDRPxrpYL8XUMVsrKPhiz
+BCH address: 12q7Yh1L4xP5wdS9WYd12NCuz9boQErrje
+BTC address: 1FUPCpA6ttSPLJreJk8f8sjbP5Q122zmbg
+
+
 
