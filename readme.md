@@ -16,17 +16,30 @@ This library was developed on Python Version 3.5.2, and has not been tested on o
 json, and requests are both used which come by default with most python installs. Also you'll need to have a monero install if you want to run the wallet rpc. 
 
 ### Installing
-
 I may turn this into a pipable library, but for now just download or clone. 
 
 
-### Example of using code... 
-
+### Example of using code...
 ```python
+#This is how you'd use the MoneroDaemonRpc
 from monerojdaemon import MoneroDaemonRpc
 
 rpc = MoneroDaemonRpc("http://127.0.0.1:18081/json_rpc", user='username', password='password')
 rpc.get_block(89138)
+
+#This is how you could use the MoneroWalletRpc
+
+from monero_wallet_rpc import MoneroWalletRpc
+
+wallet = MoneroWalletRpc("http://127.0.0.1:28083/json_rpc", 'username', 'password')
+
+transaction_dict = {
+     "9uUr8urCW73Hf1S2PxDkmKBk8wRujbSNuVgusyUDGv5seSjbKwDATafCXAmbWd8cWHghhzF2J4hpGLXEkUkxHCT35A4VaU3": 0.0010001,
+     "9w3GEk4HpjZFGMp8hq56fuaZTC4RVzdpbMVD5mw2kKK9afoQJRNXfYaaEsZpo5yY4S3ruNKqF8nF7dnpPsFysFRrFnXbWu8": 0.00227}
+#
+wallet.transfer(transaction_dict, 10)
+
+
 ```
 
 ### Support
