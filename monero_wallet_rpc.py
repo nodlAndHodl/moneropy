@@ -28,7 +28,56 @@ class MoneroWalletRpc:
             headers=self.headers,
             auth=HTTPDigestAuth(self.user, self.password)
         )
-        return json.dumps(response.json(), indent=5)
+        return response.json()
+
+    def refresh(self):
+        return self.post_to_monero_wallet_rpc("refresh")
+
+    def prepare_multisig(self):
+        return self.post_to_monero_wallet_rpc("prepare_multisig")
+
+    def exchange_multisig_keys(self, *, multisig_info):
+        params = {"multisig_info": multisig_info}
+        return self.post_to_monero_wallet_rpc("exchange_multisig_keys", params)
+        
+
+    def make_multisig(self, *, multisig_info, threshold: int, password: str = None):
+        params = {
+            "multisig_info": multisig_info,
+            "threshold": threshold}
+
+        if password:
+            params["password"] = password
+        return self.post_to_monero_wallet_rpc("make_multisig", params)
+
+
+    def finalize_multisig(self, *, multisig_info, password: str = None):
+        params = {
+            "multisig_info": multisig_info}
+
+        if password:
+            params["password"] = password
+            
+        return self.post_to_monero_wallet_rpc("finalize_multisig", params)
+
+    def is_multisig(self):
+        return self.post_to_monero_wallet_rpc("is_multisig")
+
+    def sign_multisig(self, tx_data_hex=None):
+        params = {"tx_data_hex" : tx_data_hex}
+        
+        return self.post_to_monero_wallet_rpc("sign_multisig", params=params)
+
+    def submit_multisig(self, tx_data_hex=None):
+        params = {"tx_data_hex" : tx_data_hex}
+        return self.post_to_monero_wallet_rpc("submit_multisig", params=params)
+
+    def export_multisig_info(self):
+        return self.post_to_monero_wallet_rpc("export_multisig_info")
+
+    def import_multisig_info(self, info=None):
+        params = {"info":  info}
+        return self.post_to_monero_wallet_rpc("import_multisig_info", params=params)    
 
     def get_balance(self):
         return self.post_to_monero_wallet_rpc("getbalance")
@@ -89,14 +138,17 @@ class MoneroWalletRpc:
 
 
     #You need to have set the argument "–wallet-dir" when
-    def create_wallet(self, wallet_name=str, password=str):
-        params = {"filename": wallet_name, "password": password}
+    def create_wallet(self, wallet_name:str, password: str, language: str = "English"):
+        params = {"filename": wallet_name, "password": password, "language": language}
         return self.post_to_monero_wallet_rpc("create_wallet", params)
 
     #You need to have set the argument "–wallet-dir" when
-    def open_wallet(self, wallet_name=str, password=str):
+    def open_wallet(self, wallet_name:str, password:str):
         params = {"filename": wallet_name, "password": password}
         return self.post_to_monero_wallet_rpc("open_wallet", params)
+
+    def close_wallet(self):
+        return self.post_to_monero_wallet_rpc("close_wallet")
 
     def delete_address_book(self, address_index: int):
         params = {"index": address_index}
@@ -158,7 +210,9 @@ class MoneroWalletRpc:
         # pretty print json output
         print(json.dumps(response.json(), indent=4))
 
+        return response.json()
 
+    
     def get_amount(self, amount):
         """encode amount (float number) to the cryptonote format. Hope its correct.
         Based on C++ code:
