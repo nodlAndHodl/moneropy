@@ -6,7 +6,7 @@ import binascii
 
 
 class MoneroWalletRpc:
-    def __init__(self, rpc_url=str, user=None, pwd=None):
+    def __init__(self, rpc_url:str, user=None, pwd=None):
         self.rpc_url = rpc_url
         self.user = user
         self.password = pwd
@@ -138,7 +138,7 @@ class MoneroWalletRpc:
 
 
     #You need to have set the argument "–wallet-dir" when
-    def create_wallet(self, wallet_name:str, password: str, language: str = "English"):
+    def create_wallet(self, wallet_name:str, password: str, language:str = "English"):
         params = {"filename": wallet_name, "password": password, "language": language}
         return self.post_to_monero_wallet_rpc("create_wallet", params)
 
