@@ -1,3 +1,4 @@
+import logging
 import requests
 import json
 from requests.auth import HTTPDigestAuth
@@ -22,12 +23,17 @@ class MoneroWalletRpc:
             rpc_input = json.dumps({"jsonrpc": "2.0", "id": "0",
                                     "method": method})
 
+        logging.info(json.dumps(json.loads(rpc_input), indent=4))
+        
         response = requests.post(
             self.rpc_url,
             data=rpc_input,
             headers=self.headers,
             auth=HTTPDigestAuth(self.user, self.password)
         )
+
+        logging.info(json.dumps(response.json(), indent=4))
+        
         return response.json()
 
     def refresh(self):
@@ -138,12 +144,12 @@ class MoneroWalletRpc:
 
 
     #You need to have set the argument "–wallet-dir" when
-    def create_wallet(self, wallet_name:str, password: str, language:str = "English"):
+    def create_wallet(self, *, wallet_name:str, password: str, language:str = "English"):
         params = {"filename": wallet_name, "password": password, "language": language}
         return self.post_to_monero_wallet_rpc("create_wallet", params)
 
     #You need to have set the argument "–wallet-dir" when
-    def open_wallet(self, wallet_name:str, password:str):
+    def open_wallet(self, *, wallet_name:str, password:str=""):
         params = {"filename": wallet_name, "password": password}
         return self.post_to_monero_wallet_rpc("open_wallet", params)
 
@@ -178,7 +184,6 @@ class MoneroWalletRpc:
 
 
     def transfer(self, transactions, mixin=7):
-        url = self.rpc_url
         # standard json header
         headers = self.headers
         recipients = []
@@ -186,31 +191,15 @@ class MoneroWalletRpc:
             int_amount = int(self.get_amount(amount))
             assert amount == float(self.get_money(str(int_amount))), "Amount conversion failed"
             recipients.append({"address": address, "amount": int_amount})
-        print(recipients)
+
         # get some random payment_id
         payment_id = self.get_payment_id()
-        # simplewallet' procedure/method to call
-        rpc_input = {
-            "method": "transfer",
-            "params": {"destinations": recipients,
-                       "mixin": mixin,
-                       "payment_id": payment_id}
-        }
-        # add standard rpc values
-        rpc_input.update({"jsonrpc": "2.0", "id": "0"})
 
-        # execute the rpc request
-        response = requests.post(
-            url,
-            data=json.dumps(rpc_input),
-            headers=headers,
-            auth=HTTPDigestAuth(self.user, self.password))
-        # print the payment_id
-        print("#payment_id: ", payment_id)
-        # pretty print json output
-        print(json.dumps(response.json(), indent=4))
+        params = {"destinations": recipients,
+                  "mixin": mixin}
+        params["payment_id"] = payment_id
 
-        return response.json()
+        return self.post_to_monero_wallet_rpc("transfer", params)
 
     
     def get_amount(self, amount):
@@ -225,7 +214,6 @@ class MoneroWalletRpc:
             point_index = str_amount.index('.')
             fraction_size = len(str_amount) - point_index - 1
             while fraction_size < cryptonote_display_decimal_point and '0' == str_amount[-1]:
-                print(44)
                 str_amount = str_amount[:-1]
                 fraction_size = fraction_size - 1
             if cryptonote_display_decimal_point < fraction_size:
