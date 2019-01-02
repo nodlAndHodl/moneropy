@@ -192,12 +192,8 @@ class MoneroWalletRpc:
             assert amount == float(self.get_money(str(int_amount))), "Amount conversion failed"
             recipients.append({"address": address, "amount": int_amount})
 
-        # get some random payment_id
-        payment_id = self.get_payment_id()
-
         params = {"destinations": recipients,
                   "mixin": mixin}
-        params["payment_id"] = payment_id
 
         return self.post_to_monero_wallet_rpc("transfer", params)
 
