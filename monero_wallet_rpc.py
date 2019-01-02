@@ -183,7 +183,7 @@ class MoneroWalletRpc:
         return self.post_to_monero_wallet_rpc("make_uri", params)
 
 
-    def transfer(self, transactions, mixin=7):
+    def transfer(self, transactions, mixin=7, payment_id=None):
         # standard json header
         headers = self.headers
         recipients = []
@@ -194,6 +194,9 @@ class MoneroWalletRpc:
 
         params = {"destinations": recipients,
                   "mixin": mixin}
+
+        if payment_id:
+            params["payment_id"] = payment_id
 
         return self.post_to_monero_wallet_rpc("transfer", params)
 
